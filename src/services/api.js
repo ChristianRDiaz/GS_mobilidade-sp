@@ -1,35 +1,31 @@
-import axios from "axios";
-
-const BASE_URL = "http://api.olhovivo.sptrans.com.br/v2.1";
-
-const api = axios.create({
-  baseURL: BASE_URL,
-  withCredentials: true,
-});
+const BASE_URL = "https://api.olhovivo.sptrans.com.br/v2.1";
 
 let isAuthenticated = false;
 
 export const authenticateSPTrans = async (token) => {
   try {
-    // Passamos null no corpo do POST para o servidor não rejeitar por falta de Content-Length
-    const response = await api.post(
-      `/Login/Autenticar?token=${token.trim()}`,
-      null,
+    const response = await fetch(
+      `${BASE_URL}/Login/Autenticar?token=${encodeURIComponent(token.trim())}`,
+      {
+        method: "POST",
+        credentials: "include", // Faz o motor nativo do iOS/Android guardar o cookie HttpOnly automaticamente
+        headers: {
+          "Content-Length": "0",
+        },
+      },
     );
 
-    console.log("Resposta SPTrans Auth:", response.data);
+    const data = await response.json();
+    console.log("SPTrans Auth Status:", data);
 
-    if (response.data === true) {
+    if (data === true) {
       isAuthenticated = true;
       return true;
     }
+
     return false;
   } catch (error) {
-    console.error(
-      "Erro detalhado SPTrans:",
-      error.response?.status,
-      error.config?.url,
-    );
+    console.error("Erro na autenticação SPTrans:", error.message);
     return false;
   }
 };
@@ -37,17 +33,67 @@ export const authenticateSPTrans = async (token) => {
 export const searchBusLines = async (token, term) => {
   try {
     if (!isAuthenticated) {
-      const authSuccess = await authenticateSPTrans(token);
-      if (!authSuccess) return [];
+      const authenticated = await authenticateSPTrans(token);
+      if (!authenticated) return [];
     }
 
-    const response = await api.get(
-      `/Linha/Buscar?termosBusca=${encodeURIComponent(term)}`,
+    let response = await fetch(
+      `${BASE_URL}/Linha/Buscar?termosBusca=${encodeURIComponent(term)}`,
+      {
+        method: "GET",
+        credentials: "include", // Envia automaticamente o cookie apiCredentials salvo pelo sistema
+      },
     );
-    return response.data || [];
+
+    // Se a sessão expirou (401), reautentica uma vez e tenta a busca novamente
+    if (response.status === 401) {
+      isAuthenticated = false;
+      const reauthenticated = await authenticateSPTrans(token);
+      if (!reauthenticated) return [];
+
+      response = await fetch(
+        `${BASE_URL}/Linha/Buscar?termosBusca=${encodeURIComponent(term)}`,
+        {
+          method: "GET",
+          credentials: "include",
+        },
+      );
+    }
+
+    if (!response.ok) {
+      throw new Error(`HTTP error! status: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data || [];
   } catch (error) {
-    console.error("Erro ao buscar linhas:", error.message);
+    console.error("Erro ao buscar linhas na SPTrans:", error.message);
     return [];
   }
 };
-  
+
+export const getBusPositions = async (codigoLinha) => {
+  try {
+    if (!isAuthenticated) {
+      await authenticateSPTrans(token); // Garante que a sessão está ativa
+    }
+
+    const response = await fetch(
+      `${BASE_URL}/Posicao?codigoLinha=${codigoLinha}`,
+      {
+        method: 'GET',
+        credentials: 'include',
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(`Erro ao buscar posições: ${response.status}`);
+    }
+
+    const data = await response.json();
+    return data || { vs: [] };
+  } catch (error) {
+    console.error('Erro ao buscar posições dos ônibus:', error.message);
+    return { vs: [] };
+  }
+};

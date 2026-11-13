@@ -1,5 +1,11 @@
 import React, { useState, useEffect } from "react";
-import { View, Text, FlatList } from "react-native";
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+} from "react-native";
 import { styles } from "../styles/SearchScreenStyles";
 import Input from "../components/Input";
 import Button from "../components/Button";
@@ -8,7 +14,7 @@ import { getFavorites, toggleFavorite } from "../storage/storage";
 import { searchBusLines } from "../services/api";
 import { SPTRANS_TOKEN } from "../services/config";
 
-export default function SearchScreen() {
+export default function SearchScreen({ navigation }) {
   const [searchTerm, setSearchTerm] = useState("");
   const [results, setResults] = useState([]);
   const [favorites, setFavorites] = useState([]);
@@ -22,11 +28,9 @@ export default function SearchScreen() {
     setFavorites(data);
   };
 
-  // Dentro da sua SearchScreen:
   const handleSearch = async () => {
     if (!searchTerm.trim()) return;
 
-    // Chama a API real da SPTrans usando o seu token configurado
     const data = await searchBusLines(SPTRANS_TOKEN, searchTerm);
     setResults(data);
   };
@@ -54,17 +58,44 @@ export default function SearchScreen() {
       <FlatList
         style={styles.resultsList}
         data={results}
-        keyExtractor={(item) => item.id}
+        keyExtractor={(item) => String(item.cl)}
         renderItem={({ item }) => (
-          <BusCard
-            linha={item.cl}
-            nome={`${item.tp} - ${item.lt}`}
-            sentido={item.sl}
-            isFavorite={isFav(item)}
-            onFavoritePress={() => handleToggleFavorite(item)}
-          />
+          <View>
+            <BusCard
+              linha={`${item.lt}-${item.tl}`}
+              nome={`${item.tp} / ${item.ts}`}
+              sentido={item.sl}
+              isFavorite={isFav(item)}
+              onFavoritePress={() => handleToggleFavorite(item)}
+            />
+            <TouchableOpacity
+              style={localStyles.mapButton}
+              onPress={() => navigation.navigate("MapScreen", { linha: item })}
+            >
+              <Text style={localStyles.mapButtonText}>
+                🗺️ Ver Ônibus no Mapa ao Vivo
+              </Text>
+            </TouchableOpacity>
+          </View>
         )}
       />
     </View>
   );
 }
+
+const localStyles = StyleSheet.create({
+  mapButton: {
+    backgroundColor: "#e6f0fa",
+    padding: 10,
+    borderRadius: 8,
+    alignItems: "center",
+    marginBottom: 15,
+    borderWidth: 1,
+    borderColor: "#b3d1ff",
+  },
+  mapButtonText: {
+    color: "#0056b3",
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+});
