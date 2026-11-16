@@ -218,7 +218,5 @@ src/
 └── utils/           # Funções auxiliares (ex.: cálculo de distância)
 ```
 
----
+## **Desenvolvido por CHRISTIAN RAYMUNDO DIAZ - Global Solution 2026 🚀**
 
-## 7. **Desenvolvido por \[CHRISTIAN RAYMUNDO DIAZ\] --- Global Solution 2026 🚀**
-------------------------------------------------------------------------
