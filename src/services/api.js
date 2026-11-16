@@ -1,3 +1,6 @@
+import { SPTRANS_TOKEN } from "./config";
+import { getCachedStops, saveCachedStops } from "../storage/storage";
+
 const BASE_URL = "https://api.olhovivo.sptrans.com.br/v2.1";
 
 let isAuthenticated = false;
@@ -8,92 +11,141 @@ export const authenticateSPTrans = async (token) => {
       `${BASE_URL}/Login/Autenticar?token=${encodeURIComponent(token.trim())}`,
       {
         method: "POST",
-        credentials: "include", // Faz o motor nativo do iOS/Android guardar o cookie HttpOnly automaticamente
-        headers: {
-          "Content-Length": "0",
-        },
+        credentials: "include",
+        headers: { "Content-Length": "0" },
       },
     );
-
     const data = await response.json();
-    console.log("SPTrans Auth Status:", data);
-
     if (data === true) {
       isAuthenticated = true;
       return true;
     }
-
     return false;
   } catch (error) {
-    console.error("Erro na autenticação SPTrans:", error.message);
     return false;
   }
 };
 
-export const searchBusLines = async (token, term) => {
+const apiGet = async (path) => {
+  if (!isAuthenticated) {
+    await authenticateSPTrans(SPTRANS_TOKEN);
+  }
+
+  let response = await fetch(`${BASE_URL}${path}`, {
+    method: "GET",
+    credentials: "include",
+  });
+
+  if (response.status === 401) {
+    isAuthenticated = false;
+    await authenticateSPTrans(SPTRANS_TOKEN);
+    response = await fetch(`${BASE_URL}${path}`, {
+      method: "GET",
+      credentials: "include",
+    });
+  }
+
+  return response.json();
+};
+
+export const searchBusLines = async (term) => {
   try {
-    if (!isAuthenticated) {
-      const authenticated = await authenticateSPTrans(token);
-      if (!authenticated) return [];
-    }
-
-    let response = await fetch(
-      `${BASE_URL}/Linha/Buscar?termosBusca=${encodeURIComponent(term)}`,
-      {
-        method: "GET",
-        credentials: "include", // Envia automaticamente o cookie apiCredentials salvo pelo sistema
-      },
+    const data = await apiGet(
+      `/Linha/Buscar?termosBusca=${encodeURIComponent(term)}`,
     );
-
-    // Se a sessão expirou (401), reautentica uma vez e tenta a busca novamente
-    if (response.status === 401) {
-      isAuthenticated = false;
-      const reauthenticated = await authenticateSPTrans(token);
-      if (!reauthenticated) return [];
-
-      response = await fetch(
-        `${BASE_URL}/Linha/Buscar?termosBusca=${encodeURIComponent(term)}`,
-        {
-          method: "GET",
-          credentials: "include",
-        },
-      );
-    }
-
-    if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data || [];
+    return Array.isArray(data) ? data : [];
   } catch (error) {
-    console.error("Erro ao buscar linhas na SPTrans:", error.message);
+    return [];
+  }
+};
+
+export const searchStops = async (term) => {
+  try {
+    const data = await apiGet(
+      `/Parada/Buscar?termosBusca=${encodeURIComponent(term)}`,
+    );
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
     return [];
   }
 };
 
 export const getBusPositions = async (codigoLinha) => {
   try {
-    if (!isAuthenticated) {
-      await authenticateSPTrans(token); // Garante que a sessão está ativa
+    const data = await apiGet(`/Posicao/Linha?codigoLinha=${codigoLinha}`);
+    if (data && typeof data === "object") {
+      return {
+        hr: data.hr || "",
+        vs: Array.isArray(data.vs) ? data.vs : [],
+      };
     }
-
-    const response = await fetch(
-      `${BASE_URL}/Posicao?codigoLinha=${codigoLinha}`,
-      {
-        method: 'GET',
-        credentials: 'include',
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`Erro ao buscar posições: ${response.status}`);
-    }
-
-    const data = await response.json();
-    return data || { vs: [] };
+    return { hr: "", vs: [] };
   } catch (error) {
-    console.error('Erro ao buscar posições dos ônibus:', error.message);
-    return { vs: [] };
+    return { hr: "", vs: [] };
   }
+};
+
+export const getLineStops = async (codigoLinha) => {
+  try {
+    const data = await apiGet(
+      `/Parada/BuscarParadasPorLinha?codigoLinha=${codigoLinha}`,
+    );
+    return Array.isArray(data) ? data : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+export const getLinePredictions = async (codigoLinha) => {
+  try {
+    const data = await apiGet(`/Previsao/Linha?codigoLinha=${codigoLinha}`);
+    return data && Array.isArray(data.ps) ? data.ps : [];
+  } catch (error) {
+    return [];
+  }
+};
+
+export const getStopPredictions = async (codigoParada) => {
+  try {
+    const data = await apiGet(`/Previsao/Parada?codigoParada=${codigoParada}`);
+    return data && typeof data === "object" ? data : null;
+  } catch (error) {
+    return null;
+  }
+};
+
+export const getStopsCached = async (codigoLinha) => {
+  const cached = await getCachedStops(codigoLinha);
+  if (cached && cached.length > 0) return cached;
+
+  const stops = await getLineStops(codigoLinha);
+  if (stops.length > 0) {
+    await saveCachedStops(codigoLinha, stops);
+  }
+  return stops;
+};
+
+export const getStopsWithFallback = async (linha) => {
+  const stops = await getStopsCached(linha.cl);
+  if (stops.length > 0) {
+    return { stops, codigo: linha.cl, sentidoAlternativo: false };
+  }
+
+  const candidatos = await searchBusLines(String(linha.lt));
+  const irmaos = candidatos.filter(
+    (c) => c.lt === linha.lt && c.cl !== linha.cl,
+  );
+
+  for (const irmao of irmaos) {
+    const stopsIrmao = await getStopsCached(irmao.cl);
+    if (stopsIrmao.length > 0) {
+      return {
+        stops: stopsIrmao,
+        codigo: irmao.cl,
+        sentidoAlternativo: true,
+      };
+    }
+  }
+
+  return { stops: [], codigo: linha.cl, sentidoAlternativo: false };
 };

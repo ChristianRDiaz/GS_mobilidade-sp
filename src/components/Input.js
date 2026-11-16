@@ -1,8 +1,15 @@
 import React from "react";
-import { View, TextInput, StyleSheet } from "react-native";
+import { View, TextInput} from "react-native";
 import { Ionicons } from "@expo/vector-icons";
+import { styles } from "../styles/InputStyles";
 
-export default function Input({ placeholder, value, onChangeText, iconName }) {
+export default function Input({
+  placeholder,
+  value,
+  onChangeText,
+  iconName,
+  onSubmitEditing,
+}) {
   return (
     <View style={styles.container}>
       {iconName && (
@@ -14,29 +21,11 @@ export default function Input({ placeholder, value, onChangeText, iconName }) {
         placeholderTextColor="#888"
         value={value}
         onChangeText={onChangeText}
+        returnKeyType="search" 
+        onSubmitEditing={onSubmitEditing} 
+        autoCapitalize="none"
+        autoCorrect={false}
       />
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: {
-    flexDirection: "row",
-    alignItems: "center",
-    backgroundColor: "#f5f5f5",
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: "#ddd",
-    paddingHorizontal: 12,
-    marginVertical: 8,
-    height: 48,
-  },
-  icon: {
-    marginRight: 8,
-  },
-  input: {
-    flex: 1,
-    fontSize: 16,
-    color: "#333",
-  },
-});

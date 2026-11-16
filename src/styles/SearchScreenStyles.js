@@ -1,12 +1,94 @@
 import { StyleSheet } from "react-native";
 
 export const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: "#f8f9fa", padding: 16 },
-  label: { fontSize: 16, color: "#333", marginBottom: 4, fontWeight: "500" },
-  resultsList: { marginTop: 16 },
-});
-
-const localStyles = StyleSheet.create({
+  container: {
+    flex: 1,
+    backgroundColor: "#f5f5f5",
+    paddingHorizontal: 16, 
+    paddingTop: 10,
+  },
+  modoRow: {
+    flexDirection: "row",
+    marginBottom: 10,
+    gap: 8,
+  },
+  modoBtn: {
+    flex: 1,
+    paddingVertical: 10,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#b3d1ff",
+    backgroundColor: "#e6f0fa",
+    alignItems: "center",
+  },
+  modoBtnAtivo: {
+    backgroundColor: "#0056b3",
+    borderColor: "#0056b3",
+  },
+  modoText: {
+    color: "#0056b3",
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+  modoTextAtivo: {
+    color: "#fff",
+  },
+  buttonRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+  },
+  favTabButton: {
+    backgroundColor: "#fff0f3",
+    paddingVertical: 12,
+    paddingHorizontal: 14,
+    borderRadius: 8,
+    borderWidth: 1,
+    borderColor: "#ffb3c1",
+    justifyContent: "center",
+    alignItems: "center",
+  },
+  favTabButtonText: {
+    color: "#d90429",
+    fontWeight: "bold",
+    fontSize: 13,
+  },
+  switchRow: {
+    flexDirection: "row",
+    alignItems: "center",
+    marginBottom: 10,
+    gap: 8,
+  },
+  switchText: {
+    fontSize: 13,
+    color: "#333",
+  },
+  filterBanner: {
+    backgroundColor: "#fff3cd",
+    padding: 8,
+    borderRadius: 6,
+    marginBottom: 10,
+    alignItems: "center",
+  },
+  filterText: {
+    color: "#856404",
+    fontSize: 12,
+    fontWeight: "bold",
+  },
+  emptyText: {
+    textAlign: "center",
+    color: "#6c757d",
+    marginTop: 30,
+    fontSize: 14,
+    paddingHorizontal: 20,
+  },
+  busCount: {
+    fontSize: 12,
+    color: "#333",
+    marginTop: -2,
+    marginBottom: 8,
+    marginLeft: 4,
+  },
   mapButton: {
     backgroundColor: "#e6f0fa",
     padding: 10,
@@ -20,5 +102,71 @@ const localStyles = StyleSheet.create({
     color: "#0056b3",
     fontWeight: "bold",
     fontSize: 13,
+  },
+  stopCard: {
+    backgroundColor: "#fff",
+    borderRadius: 8,
+    padding: 14,
+    marginVertical: 6,
+    borderWidth: 1,
+    borderColor: "#eee",
+    elevation: 2,
+    color: "#000",
+  },
+  stopHeader: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+  },
+  stopName: {
+    flex: 1,
+    fontSize: 15,
+    fontWeight: "600",
+    color: "#333",
+    marginRight: 8,
+  },
+  stopAddress: {
+    fontSize: 12,
+    color: "#666",
+    marginTop: 4,
+  },
+  predBtn: {
+    marginTop: 10,
+    backgroundColor: "#e6f0fa",
+    padding: 8,
+    borderRadius: 6,
+    alignItems: "center",
+    borderWidth: 1,
+    borderColor: "#b3d1ff",
+  },
+  predBtnText: {
+    color: "#0056b3",
+    fontWeight: "bold",
+    fontSize: 12,
+  },
+  predBox: {
+    marginTop: 10,
+    borderTopWidth: 1,
+    borderTopColor: "#eee",
+    paddingTop: 8,
+  },
+  predRow: {
+    flexDirection: "row",
+    justifyContent: "space-between",
+    alignItems: "center",
+    paddingVertical: 4,
+  },
+  predLinha: {
+    fontSize: 13,
+    fontWeight: "bold",
+    color: "#0056b3",
+  },
+  predText: {
+    fontSize: 13,
+    color: "#333",
+  },
+  predMuted: {
+    fontSize: 12,
+    color: "#666",
   },
 });
